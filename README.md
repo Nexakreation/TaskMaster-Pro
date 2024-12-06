@@ -2,11 +2,6 @@
 
 A modern task management system built with Laravel, featuring intelligent task organization, real-time filtering, and dark mode support.
 
-<p align="center">
-<a href="https://github.com/nikhilkumar1505/TaskMasterPro/actions"><img src="https://img.shields.io/github/workflow/status/nikhilkumar1505/TaskMasterPro/tests" alt="Build Status"></a>
-<a href="https://github.com/nikhilkumar1505/TaskMasterPro"><img src="https://img.shields.io/github/license/nikhilkumar1505/TaskMasterPro" alt="License"></a>
-</p>
-
 ## Features
 
 - 🎯 Smart Task Management
