@@ -1,0 +1,40 @@
+using this will create a wasm file that can be used in the frontend to process tasks
+also a js file that can be used as a fallback if the browser doesn't support wasm
+
+
+
+
+
+To compile the C code to WebAssembly:
+
+
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+
+#note that: using this commands will install emscripten in the emsdk folder and add it to the path which size around 1.5GB 
+so be careful with that.
+we didn't install it because it's too big. dependencies not installed but C code is present for the task operations.
+
+all the code in the task_operations.c that use wasm functions are commented if you want to use them you need to uncomment them and install emscripten and compile the code again.
+
+
+Install Emscripten if you haven't:
+Compile the C code:
+
+emcc resources/wasm/task_operations.c -o public/wasm/task_operations.wasm \
+    -s WASM=1 \
+    -s EXPORTED_FUNCTIONS='["_process_tasks", "_create_task_array", "_free_task_array", "_set_task_data"]' \
+    -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+    -O3
+
+
+
+This implementation:
+Uses C for efficient task filtering and sorting
+Handles memory management properly
+Provides a clean JavaScript interface
+Falls back to JavaScript if WASM isn't available
+Includes proper error handling
