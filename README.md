@@ -77,6 +77,10 @@ resources/view/task/upcoming.blade.php
 resources/view/task/today.blade.php
 resources/view/analytics/index.blade.php
 resources/view/calender/index.blade.php
+routes/api.php
+routes/auth.php
+routes/console.php
+routes/web.php
 ```
 as they contains api routing according to my subdirectory so you might change it as your directory can not be a subdirectory as mine or it can be main root directory 
 * note also check the .env and .htaccess file both in the root directory and the one in the public folder 
