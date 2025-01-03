@@ -13,8 +13,13 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Styles and Scripts -->
+        @if(file_exists(public_path('build/manifest.json')))
+            <script type="module" src="{{ asset('build/'.json_decode(file_get_contents(public_path('build/manifest.json')), true)['resources/js/app.js']['file']) }}"></script>
+            <link rel="stylesheet" href="{{ asset('build/'.json_decode(file_get_contents(public_path('build/manifest.json')), true)['resources/css/app.css']['file']) }}">
+        @else
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
     </head>
     <body class="font-sans text-gray-900 antialiased bg-gradient-to-r dark:from-slate-900 dark:to-slate-800">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">

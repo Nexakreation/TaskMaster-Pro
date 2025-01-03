@@ -90,8 +90,7 @@
                                     </div>
 
                                     <div id="today-tasks-row" class="flex justify-between items-center p-2 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors"
-                                         x-data
-                                         x-show="currentChartData?.monthly_data?.is_current_month">
+                                        style="{{ isset($viewData['monthly_data']['is_current_month']) && !$viewData['monthly_data']['is_current_month'] ? 'display: none;' : '' }}">
                                         <span class="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Today's Tasks</span>
                                         <span class="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400" id="today-tasks">
                                             {{ $viewData['monthly_data']['status_distribution']['today'] ?? 0 }}
@@ -99,8 +98,7 @@
                                     </div>
 
                                     <div id="pending-tasks-row" class="flex justify-between items-center p-2 rounded-xl hover:bg-purple-50 dark:hover:bg-gray-700/50 transition-colors"
-                                         x-data
-                                         x-show="currentChartData?.monthly_data?.is_current_month">
+                                        style="{{ isset($viewData['monthly_data']['is_current_month']) && !$viewData['monthly_data']['is_current_month'] ? 'display: none;' : '' }}">
                                         <span class="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Pending Tasks</span>
                                         <span class="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400" id="pending-tasks">
                                             {{ $viewData['monthly_data']['status_distribution']['pending'] ?? 0 }}
@@ -380,62 +378,70 @@
             if (viewData) {
                 initializeCharts(viewData);
                 console.log('View data loaded:', viewData);
+                
+                // Check if it's current month and update if needed
+                const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-based
+                const currentYear = new Date().getFullYear();
+                const selectedMonth = parseInt(document.getElementById('monthSelect').value);
+                const selectedYear = parseInt(document.getElementById('yearSelect').value);
+                
+                if (selectedMonth === currentMonth && selectedYear === currentYear) {
+                    // If it's current month, fetch fresh data
+                    updateCharts();
+                }
             }
         });
 
         async function updateCharts() {
-            const month = document.getElementById('monthSelect').value;
-            const year = document.getElementById('yearSelect').value;
-            
+            const button = document.querySelector('button[onclick="updateCharts()"]');
+            button.disabled = true;
+            button.innerHTML = 'Loading...';
+
             try {
-                const button = document.querySelector('button[onclick="updateCharts()"]');
-                button.disabled = true;
-                button.innerHTML = 'Loading...';
+                const month = document.getElementById('monthSelect').value;
+                const year = document.getElementById('yearSelect').value;
                 
-                const response = await fetch(`/api/analytics/monthly?year=${year}&month=${month}`, {
+                const response = await fetch(`/taskmaster-pro/public/api/analytics/monthly?year=${year}&month=${month}`, {
+                    method: 'GET',
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    credentials: 'same-origin'
+                    }
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to update charts');
-                }
-                
                 const data = await response.json();
                 
+                if (!response.ok || data.error) {
+                    throw new Error(data.message || 'Failed to fetch analytics data');
+                }
+
                 // Update charts
                 initializeCharts(data);
                 
                 // Update statistics
-                const completionRate = data.monthly_data.total_tasks > 0 
-                    ? Math.round((data.monthly_data.status_distribution.completed / data.monthly_data.total_tasks) * 100)
-                    : 0;
-                    
-                document.getElementById('completion-rate').textContent = `${completionRate}%`;
-                document.getElementById('total-tasks').textContent = data.monthly_data.total_tasks;
-                document.getElementById('completed-tasks').textContent = data.monthly_data.status_distribution.completed;
-                document.getElementById('overdue-tasks').textContent = data.monthly_data.status_distribution.overdue;
+                const stats = data.monthly_data.status_distribution;
+                const total = data.monthly_data.total_tasks;
                 
-                // Only update these if it's current month
-                if (data.monthly_data.is_current_month) {
-                    document.getElementById('today-tasks').textContent = data.monthly_data.status_distribution.today;
-                    document.getElementById('pending-tasks').textContent = data.monthly_data.status_distribution.pending;
-                }
+                // Calculate completion rate
+                const completionRate = total > 0 ? Math.round((stats.completed / total) * 100) : 0;
+                
+                // Update DOM elements
+                document.getElementById('completion-rate').textContent = `${completionRate}%`;
+                document.getElementById('total-tasks').textContent = total;
+                document.getElementById('completed-tasks').textContent = stats.completed;
+                document.getElementById('overdue-tasks').textContent = stats.overdue;
+                document.getElementById('today-tasks').textContent = stats.today;
+                document.getElementById('pending-tasks').textContent = stats.pending;
 
-                // Show/hide rows based on current month
-                document.getElementById('today-tasks-row').style.display = data.monthly_data.is_current_month ? '' : 'none';
-                document.getElementById('pending-tasks-row').style.display = data.monthly_data.is_current_month ? '' : 'none';
+                // Update visibility of today's and pending tasks rows
+                const isCurrentMonth = data.monthly_data.is_current_month;
+                document.getElementById('today-tasks-row').style.display = isCurrentMonth ? '' : 'none';
+                document.getElementById('pending-tasks-row').style.display = isCurrentMonth ? '' : 'none';
 
             } catch (error) {
-                console.error('Error updating charts:', error);
-                alert('Failed to update charts: ' + error.message);
+                console.error('Error:', error);
+                alert(error.message || 'An error occurred while updating the charts');
             } finally {
-                const button = document.querySelector('button[onclick="updateCharts()"]');
                 button.disabled = false;
                 button.innerHTML = 'Update';
             }

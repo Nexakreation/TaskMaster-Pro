@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Note;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use PDO;
-use PDOException;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class NoteController extends Controller
@@ -20,7 +18,6 @@ class NoteController extends Controller
         if (is_string($tags)) {
             $tags = json_decode($tags, true);
         }
-        // Remove empty objects/arrays
         if ($tags === '{}' || $tags === '[]' || $tags === [] || $tags === (object)[]) {
             return [];
         }
@@ -29,53 +26,115 @@ class NoteController extends Controller
 
     public function index()
     {
-        try {
-            $pdo = new \PDO("mysql:host=localhost;dbname=todo_app", "root", "");
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $notes = DB::table('notes')
+            ->where('user_id', Auth::id())
+            ->orderBy('position')
+            ->get();
 
-            $stmt = $pdo->prepare("SELECT * FROM notes WHERE user_id = ? ORDER BY position");
-            $stmt->execute([Auth::id()]);
-            $notes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-            // Clean tags for each note
-            foreach ($notes as &$note) {
-                $note['tags'] = $this->cleanTags($note['tags']);
-            }
-
-            return response()->json($notes);
-        } catch (PDOException $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        foreach ($notes as &$note) {
+            $note->tags = $this->cleanTags($note->tags);
         }
+
+        return response()->json($notes);
     }
+
+    // public function store(Request $request)
+    // {
+    //     $tags = $this->cleanTags($request->tags);
+
+    //     // Get the maximum position value for the current user's notes
+    //     $maxPosition = DB::table('notes')
+    //         ->where('user_id', Auth::id())
+    //         ->max('position');
+
+    //     $id = DB::table('notes')->insertGetId([
+    //         'title' => $request->title,
+    //         'content' => $request->content,
+    //         'color' => $request->color,
+    //         'tags' => json_encode($tags),
+    //         'user_id' => Auth::id(),
+    //         'position' => ($maxPosition ?? -1) + 1  // Set position to max + 1
+    //     ]);
+
+    //     return response()->json([
+    //         'id' => $id,
+    //         'title' => $request->title,
+    //         'content' => $request->content,
+    //         'color' => $request->color,
+    //         'tags' => $tags,
+    //         'user_id' => Auth::id(),
+    //         'position' => ($maxPosition ?? -1) + 1
+    //     ]);
+    // }
+
+
+    //     public function store(Request $request)
+    // {
+    //     try {
+    //         $validated = $request->validate([
+    //             'title' => 'required|string|max:255',
+    //             'content' => 'required|string',
+    //             'color' => 'required|string',
+    //             'tags' => 'array'
+    //         ]);
+
+    //         $note = Note::create($validated);
+
+    //         return response()->json($note, 201);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage()], 422);
+    //     }
+    // }
 
     public function store(Request $request)
     {
         try {
-            $pdo = new \PDO("mysql:host=localhost;dbname=todo_app", "root", "");
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-            $tags = $this->cleanTags($request->tags);
-
-            $stmt = $pdo->prepare("INSERT INTO notes (title, content, color, tags, user_id) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $request->title,
-                $request->content,
-                $request->color,
-                json_encode($tags),
-                Auth::id()
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'color' => 'required|string',
+                'tags' => 'array'
             ]);
 
-            return response()->json([
-                'id' => $pdo->lastInsertId(),
+            $validated['user_id'] = Auth::id();
+
+            $note = Note::create($validated);
+
+            return response()->json($note, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function update(Request $request, Note $note)
+    {
+        $tags = $this->cleanTags($request->tags);
+
+        DB::table('notes')
+            ->where('id', $note->id)
+            ->where('user_id', Auth::id())
+            ->update([
                 'title' => $request->title,
                 'content' => $request->content,
                 'color' => $request->color,
-                'tags' => $tags,
-                'user_id' => Auth::id()
+                'tags' => json_encode($tags)
             ]);
-        } catch (PDOException $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+
+        return response()->json([
+            'id' => $note->id,
+            'title' => $request->title,
+            'content' => $request->content,
+            'color' => $request->color,
+            'tags' => $tags,
+            'user_id' => Auth::id()
+        ]);
+    }
+
+    public function destroy(Note $note)
+    {
+        $this->authorize('delete', $note);
+        $note->delete();
+        return response()->json(['message' => 'Note deleted successfully']);
     }
 
     public function reorder(Request $request)
@@ -88,7 +147,6 @@ class NoteController extends Controller
         $note = Note::findOrFail($request->noteId);
         $targetIndex = $request->targetIndex;
 
-        // Update orders
         if ($targetIndex > $note->order) {
             Note::where('order', '>', $note->order)
                 ->where('order', '<=', $targetIndex)
@@ -100,45 +158,6 @@ class NoteController extends Controller
         }
 
         $note->update(['order' => $targetIndex]);
-
         return response()->json(['message' => 'Note reordered successfully']);
     }
-
-    public function destroy(Note $note)
-    {
-        $this->authorize('delete', $note);
-        $note->delete();
-        return response()->json(['message' => 'Note deleted successfully']);
-    }
-
-    public function update(Request $request, Note $note)
-    {
-        try {
-            $pdo = new \PDO("mysql:host=localhost;dbname=todo_app", "root", "");
-            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-            $tags = $this->cleanTags($request->tags);
-
-            $stmt = $pdo->prepare("UPDATE notes SET title = ?, content = ?, color = ?, tags = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([
-                $request->title,
-                $request->content,
-                $request->color,
-                json_encode($tags),
-                $note->id,
-                Auth::id()
-            ]);
-
-            return response()->json([
-                'id' => $note->id,
-                'title' => $request->title,
-                'content' => $request->content,
-                'color' => $request->color,
-                'tags' => $tags,
-                'user_id' => Auth::id()
-            ]);
-        } catch (PDOException $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-} 
+}

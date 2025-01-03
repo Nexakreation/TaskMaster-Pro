@@ -127,7 +127,7 @@
                                 <template x-for="(day, index) in monthDays" :key="index">
                                     <div class="min-h-[100px] p-2 border border-black border-opacity-35 dark:border-purple-900/20 hover:bg-gradient-to-br from-purple-50 to-pink-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 rounded-xl overflow-y-auto"
                                          :class="{ 'border-2 !border-purple-500 dark:!border-purple-400 shadow-lg shadow-purple-500/20': day && isTodayDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) }">
-                                        <span class="font-medium text-sm group-hover:bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600" x-text="day"></span>
+                                        <span class="font-medium text-sm group-hover:bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 dark:text-gray-400" x-text="day"></span>
                                         <div x-html="day ? renderDayItems(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) : ''"></div>
                                     </div>
                                 </template>
@@ -153,7 +153,7 @@
 
                 async loadTasks() {
                     try {
-                        const response = await fetch('/api/tasks');
+                        const response = await fetch('/taskmaster-pro/public/api/tasks');
                         if (!response.ok) throw new Error('Failed to load tasks');
                         this.tasks = await response.json();
                     } catch (error) {

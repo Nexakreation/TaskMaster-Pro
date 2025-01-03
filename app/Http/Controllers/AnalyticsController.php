@@ -149,47 +149,97 @@ class AnalyticsController extends Controller
     public function getMonthlyData(Request $request)
     {
         try {
-            // Get authenticated user's tasks for the specified month
-            $year = $request->input('year', date('Y'));
-            $month = $request->input('month', date('m'));
-            
+            $year = (int) $request->input('year', date('Y'));
+            $month = (int) $request->input('month', date('m'));
+
+            // Basic validation
+            if ($month < 1 || $month > 12 || $year < 2000 || $year > 2100) {
+                throw new \Exception('Invalid date parameters');
+            }
+
+            // Get tasks for the specified month
             $tasks = Task::where('user_id', Auth::id())
                 ->whereYear('date', $year)
                 ->whereMonth('date', $month)
-                ->select('id', 'text', 'date', 'completed', 'created_at')
-                ->orderBy('date')
                 ->get();
 
-            // Format tasks for Python processing
-            $formattedTasks = $tasks->map(function($task) {
-                return [
-                    'id' => $task->id,
-                    'text' => $task->text,
-                    'date' => $task->date->format('Y-m-d'),
-                    'completed' => (bool) $task->completed,
-                    'created_at' => $task->created_at->format('Y-m-d')
-                ];
-            })->values()->toArray();
+            // Get basic info
+            $daysInMonth = date('t', mktime(0, 0, 0, $month, 1, $year));
+            $today = now();
+            $isCurrentMonth = ($year == $today->year && $month == $today->month);
+            $todayDate = $today->format('Y-m-d');
 
-            // If no tasks, return empty analytics
-            if (empty($formattedTasks)) {
-                return response()->json($this->getEmptyAnalytics());
+            // Initialize arrays
+            $dailyTasks = array_fill(0, $daysInMonth, 0);
+            $statusCounts = [
+                'completed' => 0,
+                'overdue' => 0,
+                'today' => 0,
+                'pending' => 0
+            ];
+
+            // Count tasks
+            foreach ($tasks as $task) {
+                try {
+                    // Daily count
+                    $day = (int) $task->date->format('d') - 1; // Array is 0-based
+                    if ($day >= 0 && $day < $daysInMonth) {
+                        $dailyTasks[$day]++;
+                    }
+
+                    // Status count
+                    if ($task->completed) {
+                        $statusCounts['completed']++;
+                    } else {
+                        $taskDate = $task->date->format('Y-m-d');
+                        
+                        if ($taskDate === $todayDate) {
+                            // Task is due today
+                            $statusCounts['today']++;
+                        } elseif ($task->date->isPast()) {
+                            // Task is overdue
+                            $statusCounts['overdue']++;
+                        } else {
+                            // Task is pending (future date)
+                            $statusCounts['pending']++;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error processing task: ' . $e->getMessage(), [
+                        'task_id' => $task->id,
+                        'task_date' => $task->date,
+                        'error' => $e->getMessage()
+                    ]);
+                    continue;
+                }
             }
 
-            // Process analytics using Python
-            $analytics = $this->processAnalytics($formattedTasks);
-            
-            if (!$analytics) {
-                throw new Exception('Failed to process analytics data');
-            }
+            // Get additional stats
+            $totalTasks = $tasks->count();
+            $completionRate = $totalTasks > 0 
+                ? round(($statusCounts['completed'] / $totalTasks) * 100) 
+                : 0;
 
-            return response()->json($analytics);
+            return response()->json([
+                'monthly_data' => [
+                    'days_in_month' => $daysInMonth,
+                    'daily_completion' => $dailyTasks,
+                    'status_distribution' => $statusCounts,
+                    'total_tasks' => $totalTasks,
+                    'completion_rate' => $completionRate,
+                    'is_current_month' => $isCurrentMonth
+                ]
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Analytics processing failed: ' . $e->getMessage());
+            Log::error('Monthly analytics error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return response()->json([
-                'error' => 'Failed to process analytics',
-                'message' => $e->getMessage()
+                'error' => true,
+                'message' => app()->environment('local') 
+                    ? $e->getMessage() 
+                    : 'An error occurred while processing the data'
             ], 500);
         }
     }

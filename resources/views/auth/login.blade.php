@@ -62,7 +62,7 @@
                         Email Address
                     </label>
                     <div class="mt-1 relative">
-                        <input id="email" type="email" name="email" :value="old('email')" required autofocus
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
                             class="block w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                             placeholder="Enter your email"
                             tabindex="1">

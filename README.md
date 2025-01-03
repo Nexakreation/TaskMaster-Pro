@@ -2,10 +2,6 @@
 
 A modern task management system built with Laravel, featuring intelligent task organization, real-time filtering, and dark mode support.
 
-<p align="center">
-<a href="https://github.com/nikhilkumar1505/TaskMasterPro/actions"><img src="https://img.shields.io/github/workflow/status/nikhilkumar1505/TaskMasterPro/tests" alt="Build Status"></a>
-<a href="https://github.com/nikhilkumar1505/TaskMasterPro"><img src="https://img.shields.io/github/license/nikhilkumar1505/TaskMasterPro" alt="License"></a>
-</p>
 
 ## Features
 
@@ -66,30 +62,46 @@ php artisan key:generate
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=taskmaster_pro
+DB_DATABASE=your_database
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
 
-7. Run database migrations
+7. check the routing in the directories:
+```
+resources/js/task-operator.js
+resources/view/dashboard.blade.php
+resources/view/note/index.blade.php
+resources/view/task/index.blade.php
+resources/view/task/upcoming.blade.php
+resources/view/task/today.blade.php
+resources/view/analytics/index.blade.php
+resources/view/calender/index.blade.php
+```
+as they contains api routing according to my subdirectory so you might change it as your directory can not be a subdirectory as mine or it can be main root directory 
+* note also check the .env and .htaccess file both in the root directory and the one in the public folder 
+
+
+
+8. Run database migrations
 
 ```bash
 php artisan migrate
 ```
 
-8. Create storage link
+9. Create storage link
 
 ```bash
 php artisan storage:link
 ```
 
-9. Build assets
+10. Build assets
 
 ```bash
 npm run build
 ```
 
-10. Start the development server
+11. Start the development server
 
 ```bash
 php artisan serve
@@ -180,7 +192,6 @@ If you discover any security-related issues, please email nikhilkumar150501@gmai
 ## Credits
 
 - [Nikhil Kumar](https://github.com/nikhilkumar1505)
-- [All Contributors](../../contributors)
 
 ## License
 
@@ -188,4 +199,4 @@ The TaskMaster Pro is open-sourced software licensed under the [MIT license](htt
 
 ## Support
 
-For support, email nikhilkumar150501@gmail.com or visit [my portfolio](https://ashadeewanexports.com/portfolio).
+For support, email nk60969355@gmail.com or visit [my portfolio](https://ashadeewanexports.com/portfolio).

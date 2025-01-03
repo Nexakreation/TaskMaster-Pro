@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
       x-data="{ 
-          darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
-          navExpanded: localStorage.getItem('nav-expanded') === 'true'
+          darkMode: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
       }" 
       :class="{ 'dark': darkMode }">
     <head>
@@ -16,25 +15,26 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script src="{{ asset('wasm/task_operations.js') }}"></script>
-        <script src="{{ asset('js/task-operations.js') }}"></script>
+        <!-- Styles and Scripts -->
+        @if(file_exists(public_path('build/manifest.json')))
+            <script type="module" src="{{ asset('build/'.json_decode(file_get_contents(public_path('build/manifest.json')), true)['resources/js/app.js']['file']) }}"></script>
+            <link rel="stylesheet" href="{{ asset('build/'.json_decode(file_get_contents(public_path('build/manifest.json')), true)['resources/css/app.css']['file']) }}">
+        @else
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
     </head>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-200 dark:bg-gray-900">
+        <div x-data="{ navExpanded: localStorage.getItem('nav-expanded') === 'true' }"
+             @nav-toggle.window="navExpanded = $event.detail.expanded"
+             class="min-h-screen bg-gray-200 dark:bg-gray-900">
             <!-- Navigation always at top -->
             <div class="sticky top-0 z-50">
                 @include('layouts.navigation')
             </div>
 
             <!-- Main Content -->
-            <div class="transition-all duration-300 overflow-x-hidden"
-                 :class="{
-                     'lg:ml-64': navExpanded,
-                     'lg:ml-16': !navExpanded
-                 }">
+            <div class="transition-all duration-300 overflow-x-hidden lg:ml-16"
+                 :class="{ 'lg:ml-64': navExpanded }">
                 <!-- Page Heading -->
                 @if (isset($header))
                     <header class="bg-white dark:bg-gray-800 shadow">
@@ -45,7 +45,7 @@
                 @endif
 
                 <!-- Page Content -->
-                <main class="py-4 transition-all duration-300 overflow-x-hidden" >
+                <main class="py-4 overflow-x-hidden" >
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         {{ $slot }}
                     </div>
@@ -61,8 +61,5 @@
                 document.documentElement.classList.remove('dark')
             }
         </script>
-
-
-
     </body>
-</html>
+</html> 

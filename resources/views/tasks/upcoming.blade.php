@@ -107,7 +107,7 @@
 
                 async loadTasks() {
                     try {
-                        const response = await fetch('/api/tasks');
+                        const response = await fetch('/taskmaster-pro/public/api/tasks');
                         if (!response.ok) throw new Error('Failed to load tasks');
                         this.tasks = await response.json();
                     } catch (error) {
@@ -213,7 +213,7 @@
                     }
 
                     try {
-                        const response = await fetch(`/api/tasks/${taskId}`, {
+                        const response = await fetch(`/taskmaster-pro/public/api/tasks/${taskId}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -237,7 +237,7 @@
                 async deleteTask(taskId) {
                     if (confirm('Are you sure you want to delete this task?')) {
                         try {
-                            const response = await fetch(`/api/tasks/${taskId}`, {
+                            const response = await fetch(`/taskmaster-pro/public/api/tasks/${taskId}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -280,7 +280,7 @@
                         const task = this.tasks.find(t => t.id === taskId);
                         if (task) {
                             try {
-                                const response = await fetch(`/api/tasks/${taskId}`, {
+                                const response = await fetch(`/taskmaster-pro/public/api/tasks/${taskId}`, {
                                     method: 'PUT',
                                     headers: {
                                         'Content-Type': 'application/json',

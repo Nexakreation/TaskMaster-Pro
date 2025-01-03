@@ -44,7 +44,7 @@
     <button @click="
         navExpanded = !navExpanded; 
         localStorage.setItem('nav-expanded', navExpanded);
-        document.querySelector('main').style.marginLeft = navExpanded ? '12rem' : '1rem';
+        $dispatch('nav-toggle', { expanded: navExpanded });
     "
             class="absolute -right-3 top-7 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md">
         <svg xmlns="http://www.w3.org/2000/svg" 
