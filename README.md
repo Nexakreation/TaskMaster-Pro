@@ -28,7 +28,7 @@ A modern task management system built with Laravel, featuring intelligent task o
 1.2 after installation and everything is set up, read the "sql.txt" and "C implementation.txt" file in the root directory for more information
 
 ```bash
-git clone https://github.com/nikhilkumar1505/TaskMasterPro.git
+git clone https://github.com/Nexakreation/TaskMaster-Pro.git
 cd TaskMasterPro
 ```
 
